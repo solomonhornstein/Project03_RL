@@ -6,6 +6,12 @@ Usage:
   python train.py --resume     keep training from the saved q_table.pkl
   python train.py --watch      load q_table.pkl and watch the trained agent (no exploring)
 
+Experiments (each saves scores_<name>.csv and q_table_<name>.pkl):
+  python train.py --name baseline --seed 1 --episodes 3000
+  python train.py --name alpha03  --seed 1 --episodes 3000 --alpha 0.3
+  Other flags: --gamma, --dy-bucket, --pipe-bonus, --death-penalty
+  Watch an experiment's agent: python train.py --watch --name alpha03
+
 Keys while running:
   R   toggle rendering (OFF = trains far faster; the stats panel still updates)
   S   save the Q-table now
@@ -14,7 +20,10 @@ Keys while running:
 
 import argparse
 import csv
+import random
 import pygame
+
+import flappy_env
 
 from flappy_env import FlappyEnv, WIDTH, HEIGHT
 from agent import QAgent
@@ -74,7 +83,26 @@ def main():
     parser.add_argument("--episodes", type=int, default=5000)
     parser.add_argument("--resume", action="store_true")
     parser.add_argument("--watch", action="store_true")
+    # ---- Experiment settings (defaults = the baseline design) ----
+    parser.add_argument("--alpha", type=float, default=0.7)
+    parser.add_argument("--gamma", type=float, default=0.95)
+    parser.add_argument("--dy-bucket", type=int, default=15)
+    parser.add_argument("--pipe-bonus", type=float, default=flappy_env.REWARD_PASS_PIPE)
+    parser.add_argument("--death-penalty", type=float, default=flappy_env.REWARD_DEATH)
+    parser.add_argument("--seed", type=int, default=None,
+                        help="fix randomness so runs are comparable")
+    parser.add_argument("--name", default=None,
+                        help="experiment name: saves scores_<name>.csv and q_table_<name>.pkl")
     args = parser.parse_args()
+
+    # Overwrite the environment's reward constants for this run
+    flappy_env.REWARD_PASS_PIPE = args.pipe_bonus
+    flappy_env.REWARD_DEATH = args.death_penalty
+    if args.seed is not None:
+        random.seed(args.seed)
+
+    q_path = f"q_table_{args.name}.pkl" if args.name else Q_PATH
+    log_path = f"scores_{args.name}.csv" if args.name else LOG_PATH
 
     pygame.init()
     screen = pygame.display.set_mode((WIDTH + PANEL_WIDTH, HEIGHT))
@@ -84,9 +112,9 @@ def main():
     small = pygame.font.SysFont(None, 20)
 
     env = FlappyEnv()
-    agent = QAgent()
+    agent = QAgent(alpha=args.alpha, gamma=args.gamma, dy_bucket=args.dy_bucket)
     if args.resume or args.watch:
-        agent.load(Q_PATH)
+        agent.load(q_path)
 
     rendering = args.watch     # training starts fast; watch mode always renders
     scores, best = [], 0
@@ -105,7 +133,7 @@ def main():
                     elif event.type == pygame.KEYDOWN and event.key == pygame.K_r:
                         rendering = not rendering
                     elif event.type == pygame.KEYDOWN and event.key == pygame.K_s:
-                        agent.save(Q_PATH)
+                        agent.save(q_path)
             if not running:
                 break
 
@@ -137,15 +165,15 @@ def main():
             pygame.display.flip()
 
         if not args.watch and episode % SAVE_EVERY == 0:
-            agent.save(Q_PATH)
+            agent.save(q_path)
 
     if not args.watch:
-        agent.save(Q_PATH)
-        with open(LOG_PATH, "w", newline="") as f:
-            writer = csv.writer(f)
+        agent.save(q_path)
+        with open(log_path, "w", newline="") as f:
+            writer = csv.writer(f, lineterminator="\n")
             writer.writerow(["episode", "score"])
             writer.writerows(enumerate(scores, start=1))
-        print(f"Saved {Q_PATH} and {LOG_PATH}. Best score: {best}")
+        print(f"Saved {q_path} and {log_path}. Best score: {best}")
     pygame.quit()
 
 

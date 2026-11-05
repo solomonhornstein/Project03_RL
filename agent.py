@@ -92,10 +92,15 @@ class QAgent:
     # ---------------- Saving / loading ----------------
     def save(self, path="q_table.pkl"):
         with open(path, "wb") as f:
-            pickle.dump({"q": dict(self.q), "epsilon": self.epsilon}, f)
+            # Bucket sizes are saved too: a Q-table only makes sense with the
+            # same discretization it was trained with.
+            pickle.dump({"q": dict(self.q), "epsilon": self.epsilon,
+                         "buckets": (self.dx_bucket, self.dy_bucket, self.vel_bucket)}, f)
 
     def load(self, path="q_table.pkl"):
         with open(path, "rb") as f:
             data = pickle.load(f)
         self.q = defaultdict(lambda: [0.0] * N_ACTIONS, data["q"])
         self.epsilon = data["epsilon"]
+        if "buckets" in data:
+            self.dx_bucket, self.dy_bucket, self.vel_bucket = data["buckets"]
