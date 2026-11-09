@@ -14,6 +14,7 @@ Experiments (each saves scores_<name>.csv and q_table_<name>.pkl):
 
 Keys while running:
   R   toggle rendering (OFF = trains far faster; the stats panel still updates)
+  UP / DOWN  speed up / slow down the game while rendering (1x to 32x)
   S   save the Q-table now
   ESC quit (the Q-table is saved automatically)
 """
@@ -35,7 +36,7 @@ Q_PATH = "q_table.pkl"
 LOG_PATH = "scores.csv"
 
 
-def draw_panel(screen, font, small, agent, episode, scores, best, rendering, watch):
+def draw_panel(screen, font, small, agent, episode, scores, best, rendering, watch, speed=1):
     """Right-hand panel: training stats plus a graph of the moving-average score."""
     x0 = WIDTH
     pygame.draw.rect(screen, (25, 25, 35), (x0, 0, PANEL_WIDTH, HEIGHT))
@@ -50,7 +51,7 @@ def draw_panel(screen, font, small, agent, episode, scores, best, rendering, wat
         f"Best score: {best}",
         f"Avg (last 50): {avg:.1f}",
         f"States seen: {len(agent.q)}",
-        f"Rendering: {'ON' if rendering else 'OFF (R)'}",
+        f"Rendering: {'ON' if rendering else 'OFF (R)'}   Speed: {speed}x",
     ]
     for i, text in enumerate(lines):
         screen.blit(font.render(text, True, (230, 230, 230)), (x0 + 15, 15 + i * 30))
@@ -84,7 +85,7 @@ def main():
     parser.add_argument("--resume", action="store_true")
     parser.add_argument("--watch", action="store_true")
     # ---- Experiment settings (defaults = the baseline design) ----
-    parser.add_argument("--alpha", type=float, default=0.7)
+    parser.add_argument("--alpha", type=float, default=0.3)
     parser.add_argument("--gamma", type=float, default=0.95)
     parser.add_argument("--dy-bucket", type=int, default=15)
     parser.add_argument("--pipe-bonus", type=float, default=flappy_env.REWARD_PASS_PIPE)
@@ -119,6 +120,7 @@ def main():
     rendering = args.watch     # training starts fast; watch mode always renders
     scores, best = [], 0
     running = True
+    speed = 1                  # game frames simulated per screen update (UP/DOWN keys)
 
     for episode in range(1, args.episodes + 1):
         state = env.reset()
@@ -134,6 +136,10 @@ def main():
                         rendering = not rendering
                     elif event.type == pygame.KEYDOWN and event.key == pygame.K_s:
                         agent.save(q_path)
+                    elif event.type == pygame.KEYDOWN and event.key == pygame.K_UP:
+                        speed = min(speed * 2, 32)
+                    elif event.type == pygame.KEYDOWN and event.key == pygame.K_DOWN:
+                        speed = max(speed // 2, 1)
             if not running:
                 break
 
@@ -144,9 +150,12 @@ def main():
                 agent.learn(state, action, reward, next_state, done)
             state = next_state
 
-            if rendering:
+            # At speed N, the game still runs every frame, but the screen is only
+            # drawn every Nth frame -- so it looks N times faster.
+            if rendering and env.frames % speed == 0:
                 env.render(screen, font)
-                draw_panel(screen, font, small, agent, episode, scores, best, rendering, args.watch)
+                draw_panel(screen, font, small, agent, episode, scores, best, rendering,
+                           args.watch, speed)
                 pygame.display.flip()
                 clock.tick(60)
 
@@ -161,7 +170,8 @@ def main():
         # Refresh the panel between episodes even when rendering is off
         if not rendering and episode % 10 == 0:
             env.render(screen, font)
-            draw_panel(screen, font, small, agent, episode, scores, best, rendering, args.watch)
+            draw_panel(screen, font, small, agent, episode, scores, best, rendering,
+                       args.watch, speed)
             pygame.display.flip()
 
         if not args.watch and episode % SAVE_EVERY == 0:
