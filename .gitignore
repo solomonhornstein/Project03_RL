@@ -3,3 +3,4 @@
 __pycache__/
 q_table_*.pkl
 scores.csv
+learning_curves.png
