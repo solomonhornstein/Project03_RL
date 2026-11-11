@@ -7,8 +7,9 @@ Usage:
   python train.py --watch      load q_table.pkl and watch the trained agent (no exploring)
 
 Experiments (each saves scores_<name>.csv and q_table_<name>.pkl):
-  python train.py --name baseline --seed 1 --episodes 3000
+  python train.py --name baseline --seed 1 --episodes 3000 --alpha 0.7
   python train.py --name alpha03  --seed 1 --episodes 3000 --alpha 0.3
+  (The default alpha is now 0.3, so pass --alpha 0.7 to reproduce the baseline.)
   Other flags: --gamma, --dy-bucket, --pipe-bonus, --death-penalty
   Watch an experiment's agent: python train.py --watch --name alpha03
 
@@ -17,6 +18,12 @@ Keys while running:
   UP / DOWN  speed up / slow down the game while rendering (1x to 32x)
   S   save the Q-table now
   ESC quit (the Q-table is saved automatically)
+
+AI USE (required by the DA Honor Code):
+The initial version of this file was written by Claude (Anthropic's AI).
+Claude later added the experiment flags and the UP/DOWN speed control at my
+request. I ran all training and experiments, and the default
+learning rate was changed from 0.7 to 0.3 based on my results. See AI_USAGE.md for details.
 """
 
 import argparse
@@ -85,7 +92,7 @@ def main():
     parser.add_argument("--resume", action="store_true")
     parser.add_argument("--watch", action="store_true")
     # ---- Experiment settings (defaults = the baseline design) ----
-    parser.add_argument("--alpha", type=float, default=0.3)
+    parser.add_argument("--alpha", type=float, default=0.3)  # 0.3 beat 0.7 in experiments
     parser.add_argument("--gamma", type=float, default=0.95)
     parser.add_argument("--dy-bucket", type=int, default=15)
     parser.add_argument("--pipe-bonus", type=float, default=flappy_env.REWARD_PASS_PIPE)

@@ -7,6 +7,11 @@ The agent knows nothing about Flappy Bird. It only knows:
   - afterwards it receives a reward
 From those alone it builds a Q-table: for every (state, action) pair, an
 estimate of the total future reward it can expect.
+
+AI USE (required by the DA Honor Code):
+The initial version of this file was written by Claude (Anthropic's AI).
+Claude later added saving the bucket sizes with the Q-table. The default
+learning rate was changed from 0.7 to 0.3 based on my own experiments. See AI_USAGE.md for details.
 """
 
 import pickle
@@ -18,7 +23,7 @@ N_ACTIONS = 2
 
 class QAgent:
     def __init__(self,
-                 alpha=0.7,             # learning rate: how far each update moves Q
+                 alpha=0.3,             # learning rate (0.3 beat 0.7 in experiments): how far each update moves Q
                  gamma=0.95,            # discount: how much future reward matters
                  epsilon=0.1,           # starting chance of a random (exploratory) action
                  epsilon_min=0.0,

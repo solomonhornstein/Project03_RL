@@ -7,6 +7,11 @@ Everything about gravity, pipes and collisions is "hidden physics" the
 agent has to discover through trial and error.
 
 Run this file directly to play the game yourself (SPACE = flap).
+
+AI USE (required by the DA Honor Code):
+The initial version of this file was written by Claude (Anthropic's AI)
+at my request, including the state and reward design. I ran, tested and
+played it. See AI_USAGE.md for details.
 """
 
 import random

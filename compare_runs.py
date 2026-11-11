@@ -7,6 +7,10 @@ Usage:
 
 Saves the chart as learning_curves.png and prints a summary table.
 Requires matplotlib:  pip install matplotlib
+
+AI USE (required by the DA Honor Code):
+This file was written by Claude (Anthropic's AI) at my request. I used it
+to compare my experiment runs and made the charts in the README with it. See AI_USAGE.md for details.
 """
 
 import csv
